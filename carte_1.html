@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carte satellite interactive avec Overpass</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 600px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<h3>Carte satellite interactive avec les rues dans un rayon de 5 km</h3>
+<div id="map"></div>
+
+<!-- Charger les scripts -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-overpass-layer/dist/OverpassLayer.js"></script>
+
+<!-- Code de la carte -->
+<script>
+  // Attendre que le DOM soit chargé
+  document.addEventListener('DOMContentLoaded', function() {
+    // Attendre que Leaflet soit chargé
+    setTimeout(function() {
+      // Initialiser la carte
+      var map = L.map('map').setView([50.37667194699993, 4.41899021932601], 13);
+      
+      // Ajouter le fond de carte satellite
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+      }).addTo(map);
+
+      // Ajouter le cercle
+      L.circle([50.37667194699993, 4.41899021932601], {
+        color: 'blue',
+        fillColor: '#30f',
+        fillOpacity: 0.2,
+        radius: 5000
+      }).addTo(map);
+
+      // Ajouter la couche Overpass
+      var overpassLayer = new L.OverpassLayer({
+        query: `
+          [out:json];
+          (
+            way["highway"](around:5000,50.37667194699993,4.41899021932601);
+          );
+          out body;
+          >;
+          out skel qt;
+        `,
+        minZoom: 12,
+        markerIcon: null,
+        onSuccess: function(data) {
+          console.log('Overpass data loaded:', data);
+        }
+      });
+      
+      map.addLayer(overpassLayer);
+    }, 1000); // Attendre 1 seconde pour s'assurer que tout est chargé
+  });
+</script>
+</body>
+</html>
