@@ -3,66 +3,181 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carte satellite interactive avec Overpass</title>
+  <title>Carte satellite avec contrôle du rayon</title>
   
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    #map {
-      height: 600px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
       width: 100%;
+      overflow: hidden;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+
+    .title {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 5px 15px;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+    }
+
+    .control-panel {
+      position: absolute;
+      top: 70px;
+      right: 10px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .radius-control {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .radius-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      width: 200px;
+    }
+
+    input[type="number"] {
+      width: 70px;
+      padding: 5px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
-<h3>Carte satellite interactive avec les rues dans un rayon de 5 km</h3>
+<h3 class="title">Carte satellite interactive avec rayon ajustable point de base rue d'Ahmed.</h3>
 <div id="map"></div>
 
-<!-- Charger les scripts -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-overpass-layer/dist/OverpassLayer.js"></script>
+<div class="control-panel">
+  <div class="radius-control">
+    <label>Rayon du cercle (km)</label>
+    <div class="radius-input">
+      <input type="range" id="radiusSlider" min="1" max="10" value="5" step="0.1">
+      <input type="number" id="radiusNumber" min="1" max="10" value="5" step="0.1">
+    </div>
+    <div id="coordinates" style="font-size: 0.9em; margin-top: 10px;">
+      50°22'36.2"N 4°25'08.4"E
+    </div>
+  </div>
+</div>
 
-<!-- Code de la carte -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // Attendre que le DOM soit chargé
   document.addEventListener('DOMContentLoaded', function() {
-    // Attendre que Leaflet soit chargé
-    setTimeout(function() {
-      // Initialiser la carte
-      var map = L.map('map').setView([50.37667194699993, 4.41899021932601], 13);
-      
-      // Ajouter le fond de carte satellite
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-      }).addTo(map);
+    const lat = 50.376750; // Nouvelle latitude
+    const lng = 4.418997;  // Nouvelle longitude
+    
+    // Initialiser la carte
+    const map = L.map('map').setView([lat, lng], 13);
+    let circle; // Variable pour stocker le cercle
+    
+    // Couche satellite ESRI
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    }).addTo(map);
 
-      // Ajouter le cercle
-      L.circle([50.37667194699993, 4.41899021932601], {
+    // Couche de labels et routes OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      opacity: 0.5
+    }).addTo(map);
+
+    // Ajouter le marqueur avec un popup
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(`
+      <strong>Lurquin</strong><br>
+      Latitude: 50°22'36.2"N<br>
+      Longitude: 4°25'08.4"E
+    `).openPopup();
+
+    // Fonction pour mettre à jour le cercle
+    function updateCircle(radiusKm) {
+      if (circle) {
+        map.removeLayer(circle);
+      }
+      
+      circle = L.circle([lat, lng], {
         color: 'blue',
         fillColor: '#30f',
         fillOpacity: 0.2,
-        radius: 5000
+        radius: radiusKm * 1000 // Conversion km en mètres
       }).addTo(map);
 
-      // Ajouter la couche Overpass
-      var overpassLayer = new L.OverpassLayer({
-        query: `
-          [out:json];
-          (
-            way["highway"](around:5000,50.37667194699993,4.41899021932601);
-          );
-          out body;
-          >;
-          out skel qt;
-        `,
-        minZoom: 12,
-        markerIcon: null,
-        onSuccess: function(data) {
-          console.log('Overpass data loaded:', data);
-        }
+      // Mettre à jour la requête Overpass avec le nouveau rayon
+      const query = `
+        [out:json];
+        (
+          way["highway"](around:${radiusKm * 1000},${lat},${lng});
+        );
+        out body;
+        >;
+        out skel qt;
+      `;
+
+      fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query),
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Données des routes chargées:', data);
+      })
+      .catch(error => {
+        console.error('Erreur lors du chargement des données:', error);
       });
-      
-      map.addLayer(overpassLayer);
-    }, 1000); // Attendre 1 seconde pour s'assurer que tout est chargé
+    }
+
+    // Gérer les changements du slider et du champ numérique
+    const slider = document.getElementById('radiusSlider');
+    const number = document.getElementById('radiusNumber');
+
+    slider.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      number.value = value;
+      updateCircle(value);
+    });
+
+    number.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      if (value >= 1 && value <= 10) {
+        slider.value = value;
+        updateCircle(value);
+      }
+    });
+
+    // Initialiser le cercle
+    updateCircle(5);
   });
 </script>
 </body>

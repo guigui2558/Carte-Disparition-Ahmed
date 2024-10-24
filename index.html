@@ -1,99 +1,145 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carte satellite avec labels</title>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    /* Reset des marges par défaut */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub des Cartes Interactives</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --hover-color: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+        }
 
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-    }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
 
-    /* Le conteneur de la carte prend toute la hauteur disponible */
-    #map {
-      height: 100vh;
-      width: 100%;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-    /* Style pour le titre */
-    h3 {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 5px 15px;
-      border-radius: 5px;
-      font-family: Arial, sans-serif;
-    }
-  </style>
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .intro {
+            max-width: 800px;
+            margin: 0 auto 40px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #475569;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            padding: 20px 0;
+        }
+
+        .carte {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .carte:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .carte h2 {
+            font-size: 1.5rem;
+            margin: 0 0 16px 0;
+            color: var(--text-color);
+        }
+
+        .carte p {
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        .carte-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .carte-link:hover {
+            background-color: var(--hover-color);
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 0 16px;
+            }
+        }
+    </style>
 </head>
 <body>
-<h3>Carte satellite interactive avec les rues dans un rayon de 5 km</h3>
-<div id="map"></div>
+    <div class="container">
+        <header>
+            <h1>Hub des Cartes Interactives</h1>
+            <p class="intro">Explorez les cartes interactives détaillées pour visualiser différentes zones géographiques. Chaque carte offre une vue précise avec un rayon de 5 km.</p>
+        </header>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser la carte
-    var map = L.map('map').setView([50.37667194699993, 4.41899021932601], 13);
-    
-    // Couche satellite ESRI
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri'
-    }).addTo(map);
+        <main class="grid">
+            <div class="carte">
+                <h2>Zone A</h2>
+                <p>Carte interactive détaillée couvrant la zone A a savoir un rayon de 5KM autour de Lurquin.</p>
+                <a href="carte_1.html" class="carte-link">Explorer la Zone A</a>
+            </div>
 
-    // Couche de labels et routes OpenStreetMap semi-transparente
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      opacity: 0.5
-    }).addTo(map);
+            <div class="carte">
+                <h2>Zone B</h2>
+                <p>Visualisation complète de la zone B a savoir un rayon de 5KM autour de son domicile.</p>
+                <a href="carte_2.html" class="carte-link">Explorer la Zone B</a>
+            </div>
 
-    // Cercle de 5km
-    L.circle([50.37667194699993, 4.41899021932601], {
-      color: 'blue',
-      fillColor: '#30f',
-      fillOpacity: 0.2,
-      radius: 5000
-    }).addTo(map);
-
-    // Récupérer les routes via l'API Overpass
-    const overpassUrl = 'https://overpass-api.de/api/interpreter';
-    const query = `
-      [out:json];
-      (
-        way["highway"](around:5000,50.37667194699993,4.41899021932601);
-      );
-      out body;
-      >;
-      out skel qt;
-    `;
-
-    fetch(overpassUrl, {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(query),
-    })
-    .then(response => response.json())
-    .then(data => {
-      // Traiter les données si nécessaire
-      console.log('Données des routes chargées:', data);
-    })
-    .catch(error => {
-      console.error('Erreur lors du chargement des données:', error);
-    });
-  });
-</script>
+            <div class="carte">
+                <h2>Zone C</h2>
+                <p>A venir.</p>
+                <a href="carte_3.html" class="carte-link">Explorer la Zone C</a>
+            </div>
+                
+            <div class="carte">
+                    <h2>Zone D</h2>
+                    <p>A venir.</p>
+                    <a href="carte_3.html" class="carte-link">Explorer la Zone C</a>
+            </div>
+        </main>
+    </div>
 </body>
 </html>
