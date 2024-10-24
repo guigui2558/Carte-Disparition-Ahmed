@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carte interactive avec Overpass</title>
+  
+  <!-- Inclure le CSS de Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Inclure OverpassLayer pour intégrer les données Overpass -->
+  <script src="https://unpkg.com/leaflet-overpass-layer/dist/OverpassLayer.js"></script>
+
+  <style>
+    #map {
+      height: 600px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<h3>Carte interactive avec les rues dans un rayon de 5 km</h3>
+<div id="map"></div>
+
+<script>
+  // Initialiser la carte et la centrer sur les coordonnées
+  var map = L.map('map').setView([50.37667194699993, 4.41899021932601], 13);
+
+  // Ajouter une couche de tuiles (fond de carte)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  // Ajouter un cercle avec un rayon de 5 km autour des coordonnées
+  L.circle([50.37667194699993, 4.41899021932601], {
+    color: 'blue',
+    fillColor: '#30f',
+    fillOpacity: 0.2,
+    radius: 5000
+  }).addTo(map);
+
+  // Requête Overpass pour obtenir les rues (highways) dans un rayon de 5 km
+  var overpassLayer = new L.OverpassLayer({
+    query: `
+      [out:json];
+      (
+        way["highway"](around:5000,50.37667194699993,4.41899021932601);
+      );
+      out body;
+      >;
+      out skel qt;
+    `,
+    minZoom: 12,  // Afficher la couche seulement au zoom minimum 12
+    markerIcon: null,  // Pas besoin d'icônes de marqueur
+    onSuccess: function(data) {
+      console.log('Overpass data loaded:', data);
+    }
+  });
+
+  // Ajouter la couche Overpass à la carte
+  map.addLayer(overpassLayer);
+</script>
+
+</body>
+</html>
