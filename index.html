@@ -3,45 +3,97 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hub des Cartes Interactives</title>
+  <title>Carte satellite avec labels</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body {
+    /* Reset des marges par défaut */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Le conteneur de la carte prend toute la hauteur disponible */
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* Style pour le titre */
+    h3 {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 5px 15px;
+      border-radius: 5px;
       font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    .carte {
-      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
+<h3>Carte satellite interactive avec les rues dans un rayon de 5 km</h3>
+<div id="map"></div>
 
-  <h1>Hub des Cartes Interactives</h1>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser la carte
+    var map = L.map('map').setView([50.37667194699993, 4.41899021932601], 13);
+    
+    // Couche satellite ESRI
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    }).addTo(map);
 
-  <p>Bienvenue sur le hub des cartes interactives. Sélectionnez une carte pour afficher les informations géographiques d'une zone spécifique.</p>
+    // Couche de labels et routes OpenStreetMap semi-transparente
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      opacity: 0.5
+    }).addTo(map);
 
-  <div class="carte">
-    <h2>Carte 1 : Zone A</h2>
-    <p>Carte interactive couvrant la zone A avec un rayon de 5 km.</p>
-    <a href="carte_1.html">Accéder à la carte de la Zone A</a>
-  </div>
+    // Cercle de 5km
+    L.circle([50.37667194699993, 4.41899021932601], {
+      color: 'blue',
+      fillColor: '#30f',
+      fillOpacity: 0.2,
+      radius: 5000
+    }).addTo(map);
 
-  <div class="carte">
-    <h2>Carte 2 : Zone B</h2>
-    <p>Carte interactive couvrant la zone B avec un rayon de 5 km.</p>
-    <a href="carte_2.html">Accéder à la carte de la Zone B</a>
-  </div>
+    // Récupérer les routes via l'API Overpass
+    const overpassUrl = 'https://overpass-api.de/api/interpreter';
+    const query = `
+      [out:json];
+      (
+        way["highway"](around:5000,50.37667194699993,4.41899021932601);
+      );
+      out body;
+      >;
+      out skel qt;
+    `;
 
-  <div class="carte">
-    <h2>Carte 3 : Zone C</h2>
-    <p>Carte interactive couvrant la zone C avec un rayon de 5 km.</p>
-    <a href="carte_3.html">Accéder à la carte de la Zone C</a>
-  </div>
-
-  <!-- Ajoutez autant de cartes que nécessaire -->
-
+    fetch(overpassUrl, {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query),
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Traiter les données si nécessaire
+      console.log('Données des routes chargées:', data);
+    })
+    .catch(error => {
+      console.error('Erreur lors du chargement des données:', error);
+    });
+  });
+</script>
 </body>
 </html>
